@@ -34,11 +34,11 @@ namespace Planify.API.Controllers
             try
             {
                 var response = await _authService.Register(dto);
-                return Ok(response)
+                return Ok(response);
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.message);
+                return BadRequest(ex.Message);
             }
         }
 
@@ -48,11 +48,11 @@ namespace Planify.API.Controllers
             try
             {
                 var response = await _authService.Login(dto);
-                return Ok(response)
+                return Ok(response);
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.message);
+                return BadRequest(ex.Message);
             }
         }
 
