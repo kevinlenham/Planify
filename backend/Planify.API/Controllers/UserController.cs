@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Planify.API.Data;
 using Planify.API.Models;
+using Planify.API.DTOs;
+using Planify.API.Services;
 
 namespace Planify.API.Controllers
 {
@@ -10,10 +12,12 @@ namespace Planify.API.Controllers
     public class UsersController : ControllerBase
     {
         private readonly PlanifyDbContext _context;
+        private readonly IAuthService _authService;
 
-        public UsersController(PlanifyDbContext context)
+        public UsersController(PlanifyDbContext context, IAuthService authService)
         {
             _context = context;
+            _authService = authService;
         }
 
         [HttpGet("{id}")]
@@ -24,12 +28,32 @@ namespace Planify.API.Controllers
             return Ok(user);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> CreateUser(User user)
+        [HttpPost("register")]
+        public async Task<IActionResult> RegisterUser(RegisterDto dto)
         {
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
+            try
+            {
+                var response = await _authService.Register(dto);
+                return Ok(response)
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.message);
+            }
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> LoginUser(LoginDto dto)
+        {
+            try
+            {
+                var response = await _authService.Login(dto);
+                return Ok(response)
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.message);
+            }
         }
 
         [HttpPut("{id}")]
