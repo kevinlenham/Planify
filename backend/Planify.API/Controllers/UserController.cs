@@ -57,9 +57,31 @@ namespace Planify.API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, User user)
+        public async Task<IActionResult> UpdateUser(int id, UpdateUserDto dto)
         {
-            if (id != user.Id) return BadRequest();
+            var user = await _context.Users.FindAsync(id);
+            if (id != user.Id) return NotFound();
+
+            if (dto.FirstName != null) user.FirstName = dto.FirstName;
+            if (dto.LastName != null) user.LastName = dto.LastName;
+            if (dto.Email != null) user.Email = dto.Email;
+
+            _context.Entry(user).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpPut("change-password/{id}")]
+        public async Task<IActionResult> ChangeUserPassword(int id, ChangePasswordDto dto)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (id != user.Id) return NotFound();
+
+            if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.PasswordHash))
+                return BadRequest("Current password is incorrect");
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+
             _context.Entry(user).State = EntityState.Modified;
             await _context.SaveChangesAsync();
             return NoContent();
