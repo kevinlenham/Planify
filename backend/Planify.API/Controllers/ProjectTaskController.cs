@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Planify.API.Data;
-using Planify.API.Models;
+using Planify.API.DTOs;
+using Planify.API.Services;
 
 namespace Planify.API.Controllers
 {
@@ -9,55 +8,81 @@ namespace Planify.API.Controllers
     [Route("api/[controller]")]
     public class ProjectTasksController : ControllerBase
     {
-        private readonly PlanifyDbContext _context;
+        private readonly IProjectTaskService _projectTaskService;
 
-        public ProjectTasksController(PlanifyDbContext context)
+        public ProjectTasksController(IProjectTaskService projectTaskService)
         {
-            _context = context;
-        }
-
-        [HttpGet("project/{projectId}")]
-        public async Task<IActionResult> GetProjectTasks(int projectId)
-        {
-            var tasks = await _context.ProjectTasks
-                .Where(t => t.ProjectId == projectId)
-                .ToListAsync();
-            return Ok(tasks);
+            _projectTaskService = projectTaskService;
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProjectTask(int id)
         {
-            var task = await _context.ProjectTasks.FindAsync(id);
-            if (task == null) return NotFound();
-            return Ok(task);
+            try
+            {
+                var response = await _projectTaskService.GetProjectTask(id);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet("project/{projectId}")]
+        public async Task<IActionResult> GetProjectTasksByProject(int projectId)
+        {
+            try
+            {
+                var response = await _projectTaskService.GetProjectTasksByProject(projectId);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateProjectTask(ProjectTask task)
+        public async Task<IActionResult> CreateProjectTask(ProjectTaskDto dto)
         {
-            _context.ProjectTasks.Add(task);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetProjectTask), new { id = task.Id }, task);
+            try
+            {
+                var response = await _projectTaskService.CreateProjectTask(dto);
+                return CreatedAtAction(nameof(GetProjectTask), new { id = response.Id }, response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProjectTask(int id, ProjectTask task)
+        public async Task<IActionResult> UpdateProjectTask(int id, UpdateProjectTaskDto dto)
         {
-            if (id != task.Id) return BadRequest();
-            _context.Entry(task).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-            return NoContent();
+            try
+            {
+                var response = await _projectTaskService.UpdateProjectTask(id, dto);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProjectTask(int id)
         {
-            var task = await _context.ProjectTasks.FindAsync(id);
-            if (task == null) return NotFound();
-            _context.ProjectTasks.Remove(task);
-            await _context.SaveChangesAsync();
-            return NoContent();
+            try
+            {
+                var response = await _projectTaskService.DeleteProjectTask(id);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

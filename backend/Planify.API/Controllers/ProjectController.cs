@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Planify.API.Data;
-using Planify.API.Models;
+using Planify.API.DTOs;
+using Planify.API.Services;
 
 namespace Planify.API.Controllers
 {
@@ -9,55 +8,81 @@ namespace Planify.API.Controllers
     [Route("api/[controller]")]
     public class ProjectsController : ControllerBase
     {
-        private readonly PlanifyDbContext _context;
+        private readonly IProjectService _projectService;
 
-        public ProjectsController(PlanifyDbContext context)
+        public ProjectsController(IProjectService projectService)
         {
-            _context = context;
-        }
-
-        [HttpGet("user/{userId}")]
-        public async Task<IActionResult> GetProjects(int userId)
-        {
-            var projects = await _context.Projects
-                .Where(t => t.OwnerId == userId)
-                .ToListAsync();
-            return Ok(projects);
+            _projectService = projectService;
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProject(int id)
         {
-            var project = await _context.Projects.FindAsync(id);
-            if (project == null) return NotFound();
-            return Ok(project);
+            try
+            {
+                var response = await _projectService.GetProject(id);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet("owner/{ownerId}")]
+        public async Task<IActionResult> GetProjectsByOwner(int ownerId)
+        {
+            try
+            {
+                var response = await _projectService.GetProjectsByOwner(ownerId);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateProject(Project project)
+        public async Task<IActionResult> CreateProject(ProjectDto dto)
         {
-            _context.Projects.Add(project);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetProject), new { id = project.Id }, project);
+            try
+            {
+                var response = await _projectService.CreateProject(dto);
+                return CreatedAtAction(nameof(GetProject), new { id = response.Id }, response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProject(int id, Project project)
+        public async Task<IActionResult> UpdateProject(int id, UpdateProjectDto dto)
         {
-            if (id != project.Id) return BadRequest();
-            _context.Entry(project).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-            return NoContent();
+            try
+            {
+                var response = await _projectService.UpdateProject(id, dto);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProject(int id)
         {
-            var project = await _context.Projects.FindAsync(id);
-            if (project == null) return NotFound();
-            _context.Projects.Remove(project);
-            await _context.SaveChangesAsync();
-            return NoContent();
+            try
+            {
+                var response = await _projectService.DeleteProject(id);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

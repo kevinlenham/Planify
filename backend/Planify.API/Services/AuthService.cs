@@ -9,7 +9,7 @@ using System.Text;
 
 namespace Planify.API.Services
 {
-    public class AuthService : IAuthService
+    public async class AuthService : IAuthService
     {
         private readonly PlanifyDbContext _context;
         private readonly IConfiguration _configuration;
@@ -18,6 +18,14 @@ namespace Planify.API.Services
         {
             _context = context;
             _configuration = configuration;
+        }
+
+        public async Task<User> GetUser(int id)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+                throw new Exception("User not found");
+            return user;
         }
 
         public async Task<AuthResponseDto> Register(RegisterDto dto)
@@ -64,6 +72,46 @@ namespace Planify.API.Services
                 Email = user.Email,
                 Token = GenerateToken(user)
             };
+        }
+
+        public async Task<User> UpdateUser(int id, UpdateUserDto dto)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+                throw new Exception("User not found");
+
+            if (dto.FirstName != null) user.FirstName = dto.FirstName;
+            if (dto.LastName != null) user.LastName = dto.LastName;
+            if (dto.Email != null) user.Email = dto.Email;
+
+            await _context.SaveChangesAsync();
+            return user;
+        }
+
+        public async Task<User> ChangeUserPassword(int id, ChangePasswordDto dto)
+        {
+            var user = await _context.Users.FindAsync(id)
+            if (user == null)
+                throw new Exception("User not found");
+
+            if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.PasswordHash))
+                throw new Exception("Current password is incorrect");
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+
+            await _context.SaveChangesAsync();
+            return user;
+        }
+
+        public async Task<User> DeleteUser(int id)
+        {
+            var user = await _context.Users.FindAsync(id)
+            if (user == null)
+                throw new Exception("User not found");
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+            return user;
         }
         
         private string GenerateToken(User user)
