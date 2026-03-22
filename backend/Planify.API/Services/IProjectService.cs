@@ -1,4 +1,5 @@
 using Planify.API.DTOs;
+using Planify.API.Models;
 
 namespace Planify.API.Services
 {

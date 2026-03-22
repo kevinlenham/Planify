@@ -9,7 +9,7 @@ using System.Text;
 
 namespace Planify.API.Services
 {
-    public async class AuthService : IAuthService
+    public class AuthService : IAuthService
     {
         private readonly PlanifyDbContext _context;
         private readonly IConfiguration _configuration;
@@ -90,7 +90,7 @@ namespace Planify.API.Services
 
         public async Task<User> ChangeUserPassword(int id, ChangePasswordDto dto)
         {
-            var user = await _context.Users.FindAsync(id)
+            var user = await _context.Users.FindAsync(id);
             if (user == null)
                 throw new Exception("User not found");
 
@@ -105,7 +105,7 @@ namespace Planify.API.Services
 
         public async Task<User> DeleteUser(int id)
         {
-            var user = await _context.Users.FindAsync(id)
+            var user = await _context.Users.FindAsync(id);
             if (user == null)
                 throw new Exception("User not found");
 
