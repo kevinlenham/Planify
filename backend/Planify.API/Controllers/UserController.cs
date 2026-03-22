@@ -23,8 +23,8 @@ namespace Planify.API.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUser(int id)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound();
+            var user = await _context.Users.FindAsync(id) ??
+                throw new InvalidOperationException("User not found");
             return Ok(user);
         }
 
@@ -59,8 +59,8 @@ namespace Planify.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(int id, UpdateUserDto dto)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (id != user.Id) return NotFound();
+            var user = await _context.Users.FindAsync(id) ??
+                throw new InvalidOperationException("User not found");
 
             if (dto.FirstName != null) user.FirstName = dto.FirstName;
             if (dto.LastName != null) user.LastName = dto.LastName;
@@ -74,8 +74,8 @@ namespace Planify.API.Controllers
         [HttpPut("change-password/{id}")]
         public async Task<IActionResult> ChangeUserPassword(int id, ChangePasswordDto dto)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (id != user.Id) return NotFound();
+            var user = await _context.Users.FindAsync(id) ??
+                throw new InvalidOperationException("User not found");
 
             if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.PasswordHash))
                 return BadRequest("Current password is incorrect");
@@ -90,8 +90,8 @@ namespace Planify.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound();
+            var user = await _context.Users.FindAsync(id) ??
+                throw new InvalidOperationException("User not found");
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
             return NoContent();

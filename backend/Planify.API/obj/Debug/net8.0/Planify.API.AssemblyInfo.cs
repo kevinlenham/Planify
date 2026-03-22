@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Planify.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3fda841dab4b3a95012a1715d87bab2336de6e5f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+447f08198165cd556cd4825011e4cee23e58d50f")]
 [assembly: System.Reflection.AssemblyProductAttribute("Planify.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Planify.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
