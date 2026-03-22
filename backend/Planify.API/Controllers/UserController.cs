@@ -5,6 +5,7 @@ using Planify.API.Services;
 
 namespace Planify.API.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class UsersController : ControllerBase
@@ -46,7 +47,6 @@ namespace Planify.API.Controllers
             }
         }
 
-        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(int id, UpdateUserDto dto)
         {
@@ -61,7 +61,6 @@ namespace Planify.API.Controllers
             }
         }
 
-        [Authorize]
         [HttpPut("change-password/{id}")]
         public async Task<IActionResult> ChangeUserPassword(int id, ChangePasswordDto dto)
         {
@@ -76,7 +75,6 @@ namespace Planify.API.Controllers
             }
         }
 
-        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
