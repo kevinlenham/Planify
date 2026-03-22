@@ -5,7 +5,6 @@ namespace Planify.API.Services
 {
     public interface IAuthService
     {
-        Task<User> GetUser(int id);
         Task<AuthResponseDto> Register(RegisterDto dto);
         Task<AuthResponseDto> Login(LoginDto dto);
         Task<User> UpdateUser(int id, UpdateUserDto dto);

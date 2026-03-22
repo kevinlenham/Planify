@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Planify.API.DTOs;
 using Planify.API.Services;
 
@@ -15,20 +16,7 @@ namespace Planify.API.Controllers
             _authService = authService;
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetUser(int id)
-        {
-            try
-            {
-                var response = await _authService.GetUser(id);
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
-
+        [AllowAnonymous]
         [HttpPost("register")]
         public async Task<IActionResult> RegisterUser(RegisterDto dto)
         {
@@ -43,6 +31,7 @@ namespace Planify.API.Controllers
             }
         }
 
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> LoginUser(LoginDto dto)
         {
@@ -57,6 +46,7 @@ namespace Planify.API.Controllers
             }
         }
 
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(int id, UpdateUserDto dto)
         {
@@ -71,6 +61,7 @@ namespace Planify.API.Controllers
             }
         }
 
+        [Authorize]
         [HttpPut("change-password/{id}")]
         public async Task<IActionResult> ChangeUserPassword(int id, ChangePasswordDto dto)
         {
@@ -85,6 +76,7 @@ namespace Planify.API.Controllers
             }
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {

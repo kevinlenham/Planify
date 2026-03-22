@@ -20,14 +20,6 @@ namespace Planify.API.Services
             _configuration = configuration;
         }
 
-        public async Task<User> GetUser(int id)
-        {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
-                throw new Exception("User not found");
-            return user;
-        }
-
         public async Task<AuthResponseDto> Register(RegisterDto dto)
         {
             var existingUser = await _context.Users
