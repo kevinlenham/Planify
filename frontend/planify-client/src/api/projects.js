@@ -1,6 +1,6 @@
 import client from './client'
 
-export const getProjectsByUser = (userId) => client.get(`/projects/user/${userId}`)
+export const getProjectsByUser = (userId) => client.get(`/projects/owner/${userId}`)
 export const getProject = (id) => client.get(`/projects/${id}`)
 export const createProject = (data) => client.post('/projects', data)
 export const updateProject = (id, data) => client.put(`/projects/${id}`, data)
