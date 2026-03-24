@@ -26,36 +26,65 @@ const LoginPage = () => {
   }
 
   return (
-    <div style={{ maxWidth: '400px', margin: '100px auto', padding: '2rem' }}>
-      <h1>Planify</h1>
-      <h2>Login</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={{ display: 'block', width: '100%', padding: '0.5rem' }}
-            required
-          />
+    <div className="login-root">
+      <div className="login-left">
+        <div className="login-brand">Planify</div>
+        <h1 className="login-heading">Welcome back.</h1>
+        <p className="login-subtext">Sign in to manage your projects.</p>
+        {error && <div className="login-error">{error}</div>}
+        <form className="login-form" onSubmit={handleSubmit}>
+          <div className="field-group">
+            <label className="field-label">Email</label>
+            <input
+              className="field-input"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="field-group">
+            <label className="field-label">Password</label>
+            <input
+              className="field-input"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <button className="login-btn" type="submit" disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign in'}
+          </button>
+        </form>
+        <p className="login-footer">
+          No account? <Link to="/register">Create one</Link>
+        </p>
+      </div>
+      <div className="login-right">
+        <div className="visual-card">
+          <div className="visual-card-header">
+            <div className="visual-avatar" />
+            <div>
+              <div className="visual-card-title">Q4 Product Launch</div>
+              <div className="visual-card-sub">4 tasks remaining</div>
+            </div>
+          </div>
+          {[
+            { text: 'Design system update', badge: 'Done', badgeClass: 'badge-done' },
+            { text: 'API integration', badge: 'In Progress', badgeClass: 'badge-progress' },
+            { text: 'User testing', badge: 'To Do', badgeClass: 'badge-todo' },
+            { text: 'Launch checklist', badge: 'To Do', badgeClass: 'badge-todo' },
+          ].map((task, i) => (
+            <div className="visual-task" key={i}>
+              <span className="visual-task-text">{task.text}</span>
+              <span className={`visual-badge ${task.badgeClass}`}>{task.badge}</span>
+            </div>
+          ))}
         </div>
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ display: 'block', width: '100%', padding: '0.5rem' }}
-            required
-          />
-        </div>
-        <button type="submit" disabled={loading}>
-          {loading ? 'Logging in...' : 'Login'}
-        </button>
-      </form>
-      <p>Don't have an account? <Link to="/register">Register</Link></p>
+      </div>
     </div>
   )
 }
