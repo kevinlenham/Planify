@@ -2,19 +2,20 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getProjectsByUser, createProject, deleteProject } from '../../api/projects'
+import './DashboardPage.css'
 
 const DashboardPage = () => {
   const [projects, setProjects] = useState([])
-  const [newProjectName, setNewProjectName] = useState('')
-  const [newProjectDescription, setNewProjectDescription] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [showModal, setShowModal] = useState(false)
+  const [newProject, setNewProject] = useState({ name: '', description: '' })
+  const [creating, setCreating] = useState(false)
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
-  useEffect(() => {
-    fetchProjects()
-  }, [])
+  // eslint-disable-next-line
+  useEffect(() => { fetchProjects() }, [])
 
   const fetchProjects = async () => {
     try {
@@ -29,21 +30,21 @@ const DashboardPage = () => {
 
   const handleCreateProject = async (e) => {
     e.preventDefault()
+    setCreating(true)
     try {
-      await createProject({
-        name: newProjectName,
-        description: newProjectDescription,
-        ownerId: user.userId
-      })
-      setNewProjectName('')
-      setNewProjectDescription('')
+      await createProject({ ...newProject, ownerId: user.userId })
+      setNewProject({ name: '', description: '' })
+      setShowModal(false)
       fetchProjects()
     } catch (err) {
       setError('Failed to create project')
+    } finally {
+      setCreating(false)
     }
   }
 
-  const handleDeleteProject = async (id) => {
+  const handleDeleteProject = async (e, id) => {
+    e.stopPropagation()
     try {
       await deleteProject(id)
       fetchProjects()
@@ -57,67 +58,98 @@ const DashboardPage = () => {
     navigate('/login')
   }
 
-  if (loading) return <div>Loading...</div>
+  const formatDate = (dateStr) => {
+    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  }
+
+  if (loading) return <div className="dash-loading">Loading...</div>
 
   return (
-    <div style={{ maxWidth: '800px', margin: '2rem auto', padding: '2rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Welcome, {user.firstName}!</h1>
-        <button onClick={handleLogout}>Logout</button>
+    <div className="dash-root">
+      <nav className="dash-nav">
+        <div className="dash-brand">Planify</div>
+        <div className="dash-nav-right">
+          <span className="dash-user">Hello, <span>{user.firstName}</span></span>
+          <button className="btn-logout" onClick={handleLogout}>Sign out</button>
+        </div>
+      </nav>
+
+      <div className="dash-body">
+        <div className="dash-header">
+          <h1 className="dash-greeting">Good to see you, {user.firstName}.</h1>
+          <p className="dash-tagline">Here's what you're working on.</p>
+        </div>
+
+        {error && <div className="dash-error">{error}</div>}
+
+        <div className="dash-section-header">
+          <span className="dash-section-title">Projects — {projects.length}</span>
+          <button className="btn-new" onClick={() => setShowModal(true)}>+ New Project</button>
+        </div>
+
+        <div className="projects-grid">
+          {projects.length === 0 ? (
+            <div className="empty-state">
+              <p>No projects yet — create your first one</p>
+            </div>
+          ) : (
+            projects.map((project) => (
+              <div className="project-card" key={project.id} onClick={() => navigate(`/projects/${project.id}`)}>
+                <div className="project-card-top">
+                  <div className="project-icon">📁</div>
+                  <button className="btn-delete" onClick={(e) => handleDeleteProject(e, project.id)}>✕</button>
+                </div>
+                <div className="project-name">{project.name}</div>
+                <div className="project-desc">{project.description || 'No description'}</div>
+                <div className="project-card-footer">
+                  <span className="project-date">{formatDate(project.createdAt)}</span>
+                  <button className="btn-open">Open →</button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-
-      <h2>Create New Project</h2>
-      <form onSubmit={handleCreateProject}>
-        <div style={{ marginBottom: '1rem' }}>
-          <input
-            type="text"
-            placeholder="Project name"
-            value={newProjectName}
-            onChange={(e) => setNewProjectName(e.target.value)}
-            style={{ padding: '0.5rem', marginRight: '1rem' }}
-            required
-          />
-          <input
-            type="text"
-            placeholder="Description"
-            value={newProjectDescription}
-            onChange={(e) => setNewProjectDescription(e.target.value)}
-            style={{ padding: '0.5rem', marginRight: '1rem' }}
-          />
-          <button type="submit">Create</button>
-        </div>
-      </form>
-
-      <h2>Your Projects</h2>
-      {projects.length === 0 ? (
-        <p>No projects yet — create one above!</p>
-      ) : (
-        projects.map((project) => (
-          <div key={project.id} style={{
-            border: '1px solid #ccc',
-            borderRadius: '8px',
-            padding: '1rem',
-            marginBottom: '1rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <div>
-              <h3 style={{ margin: 0 }}>{project.name}</h3>
-              <p style={{ margin: 0, color: '#666' }}>{project.description}</p>
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">New Project</h2>
+              <button className="btn-close" onClick={() => setShowModal(false)}>✕</button>
             </div>
-            <div>
-              <button onClick={() => navigate(`/projects/${project.id}`)} style={{ marginRight: '0.5rem' }}>
-                Open
-              </button>
-              <button onClick={() => handleDeleteProject(project.id)} style={{ color: 'red' }}>
-                Delete
-              </button>
-            </div>
+            <form className="modal-form" onSubmit={handleCreateProject}>
+              <div className="field-group">
+                <label className="field-label">Project Name</label>
+                <input
+                  className="field-input"
+                  type="text"
+                  placeholder="e.g. Q4 Product Launch"
+                  value={newProject.name}
+                  onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
+                  required
+                  autoFocus
+                />
+              </div>
+              <div className="field-group">
+                <label className="field-label">Description</label>
+                <input
+                  className="field-input"
+                  type="text"
+                  placeholder="What's this project about?"
+                  value={newProject.description}
+                  onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
+                />
+              </div>
+              <div className="modal-actions">
+                <button className="btn-cancel" type="button" onClick={() => setShowModal(false)}>Cancel</button>
+                <button className="btn-create" type="submit" disabled={creating}>
+                  {creating ? 'Creating...' : 'Create Project'}
+                </button>
+              </div>
+            </form>
           </div>
-        ))
+        </div>
       )}
     </div>
   )

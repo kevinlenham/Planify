@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import './RegisterPage.css'
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -33,29 +34,54 @@ const RegisterPage = () => {
   }
 
   return (
-    <div style={{ maxWidth: '400px', margin: '100px auto', padding: '2rem' }}>
-      <h1>Planify</h1>
-      <h2>Register</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
-        {['firstName', 'lastName', 'email', 'password'].map((field) => (
-          <div key={field} style={{ marginBottom: '1rem' }}>
-            <label>{field}</label>
-            <input
-              type={field === 'password' ? 'password' : field === 'email' ? 'email' : 'text'}
-              name={field}
-              value={formData[field]}
-              onChange={handleChange}
-              style={{ display: 'block', width: '100%', padding: '0.5rem' }}
-              required
-            />
+    <div className="register-root">
+      <div className="register-left">
+        <div className="register-brand">Planify</div>
+        <h1 className="register-heading">Start building.</h1>
+        <p className="register-subtext">Create your account and start managing projects.</p>
+        {error && <div className="register-error">{error}</div>}
+        <form className="register-form" onSubmit={handleSubmit}>
+          <div className="field-row">
+            <div className="field-group">
+              <label className="field-label">First Name</label>
+              <input className="field-input" type="text" name="firstName" placeholder="John" value={formData.firstName} onChange={handleChange} required />
+            </div>
+            <div className="field-group">
+              <label className="field-label">Last Name</label>
+              <input className="field-input" type="text" name="lastName" placeholder="Doe" value={formData.lastName} onChange={handleChange} required />
+            </div>
+          </div>
+          <div className="field-group">
+            <label className="field-label">Email</label>
+            <input className="field-input" type="email" name="email" placeholder="you@example.com" value={formData.email} onChange={handleChange} required />
+          </div>
+          <div className="field-group">
+            <label className="field-label">Password</label>
+            <input className="field-input" type="password" name="password" placeholder="••••••••" value={formData.password} onChange={handleChange} required />
+          </div>
+          <button className="register-btn" type="submit" disabled={loading}>
+            {loading ? 'Creating account...' : 'Create account'}
+          </button>
+        </form>
+        <p className="register-footer">
+          Already have an account? <Link to="/login">Sign in</Link>
+        </p>
+      </div>
+      <div className="register-right">
+        {[
+          { icon: '📋', title: 'Project Management', desc: 'Organise your work into projects with tasks and deadlines.' },
+          { icon: '🎯', title: 'Kanban Boards', desc: 'Drag and drop tasks across To Do, In Progress, and Done.' },
+          { icon: '⚡', title: 'Built on .NET + React', desc: 'Fast, reliable, modern full-stack architecture.' },
+        ].map((f, i) => (
+          <div className="feature-item" key={i}>
+            <div className="feature-icon">{f.icon}</div>
+            <div>
+              <div className="feature-title">{f.title}</div>
+              <div className="feature-desc">{f.desc}</div>
+            </div>
           </div>
         ))}
-        <button type="submit" disabled={loading}>
-          {loading ? 'Registering...' : 'Register'}
-        </button>
-      </form>
-      <p>Already have an account? <Link to="/login">Login</Link></p>
+      </div>
     </div>
   )
 }

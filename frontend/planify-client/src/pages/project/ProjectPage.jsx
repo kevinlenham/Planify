@@ -1,28 +1,28 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { getProject } from '../../api/projects'
 import { getTasksByProject, createTask, updateTask, deleteTask } from '../../api/projectTasks'
+import './ProjectPage.css'
 
 const STATUS_OPTIONS = ['ToDo', 'InProgress', 'Done']
-
-const STATUS_MAP = {
-  'ToDo': 0,
-  'InProgress': 1,
-  'Done': 2
-}
+const STATUS_MAP = { 'ToDo': 0, 'InProgress': 1, 'Done': 2 }
+const STATUS_REVERSE = { 0: 'ToDo', 1: 'InProgress', 2: 'Done' }
+const STATUS_LABELS = { ToDo: 'To Do', InProgress: 'In Progress', Done: 'Done' }
 
 const ProjectPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const [project, setProject] = useState(null)
   const [tasks, setTasks] = useState([])
-  const [newTask, setNewTask] = useState({ name: '', description: '', dueDate: '' })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [showModal, setShowModal] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [newTask, setNewTask] = useState({ name: '', description: '', dueDate: '', status: 'ToDo' })
 
-  useEffect(() => {
-    fetchData()
-  }, [id])
+  // eslint-disable-next-line
+  useEffect(() => { fetchData() }, [id])
 
   const fetchData = async () => {
     try {
@@ -41,26 +41,24 @@ const ProjectPage = () => {
 
   const handleCreateTask = async (e) => {
     e.preventDefault()
+    setCreating(true)
     try {
-      await createTask({ ...newTask, projectId: parseInt(id) })
-      setNewTask({ name: '', description: '', dueDate: '' })
+      await createTask({
+        name: newTask.name,
+        description: newTask.description,
+        dueDate: newTask.dueDate || new Date().toISOString(),
+        status: STATUS_MAP[newTask.status],
+        projectId: parseInt(id)
+      })
+      setNewTask({ name: '', description: '', dueDate: '', status: 'ToDo' })
+      setShowModal(false)
       fetchData()
     } catch (err) {
       setError('Failed to create task')
+    } finally {
+      setCreating(false)
     }
   }
-
-    const handleStatusChange = async (task, newStatus) => {
-    try {
-        await updateTask(task.id, {
-        ...task,
-        status: STATUS_MAP[newStatus]
-        })
-        fetchData()
-    } catch (err) {
-        setError('Failed to update task')
-    }
-    }
 
   const handleDeleteTask = async (taskId) => {
     try {
@@ -71,80 +69,147 @@ const ProjectPage = () => {
     }
   }
 
-  if (loading) return <div>Loading...</div>
-  if (!project) return <div>Project not found</div>
+  const handleDragEnd = async (result) => {
+    const { destination, source, draggableId } = result
+    if (!destination) return
+    if (destination.droppableId === source.droppableId && destination.index === source.index) return
 
-    const tasksByStatus = {
-    ToDo: tasks.filter(t => t.status === 0),
-    InProgress: tasks.filter(t => t.status === 1),
-    Done: tasks.filter(t => t.status === 2)
+    const taskId = parseInt(draggableId)
+    const newStatus = STATUS_MAP[destination.droppableId]
+    const task = tasks.find(t => t.id === taskId)
+
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t))
+
+    try {
+      await updateTask(taskId, { ...task, status: newStatus })
+    } catch (err) {
+      setError('Failed to update task')
+      fetchData()
     }
+  }
+
+  const getTasksByStatus = (status) => tasks.filter(t => STATUS_REVERSE[t.status] === status)
+
+  const formatDueDate = (dateStr) => {
+    if (!dateStr) return null
+    const date = new Date(dateStr)
+    const isOverdue = date < new Date()
+    return { text: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), overdue: isOverdue }
+  }
+
+  if (loading) return <div className="proj-loading">Loading...</div>
+  if (!project) return <div className="proj-loading">Project not found</div>
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '2rem auto', padding: '2rem' }}>
-      <button onClick={() => navigate('/dashboard')}>← Back</button>
-      <h1>{project.name}</h1>
-      <p>{project.description}</p>
+    <div className="proj-root">
+      <nav className="proj-nav">
+        <div className="proj-nav-left">
+          <button className="btn-back" onClick={() => navigate('/dashboard')}>← Dashboard</button>
+          <h1 className="proj-title">{project.name}</h1>
+        </div>
+        <button className="btn-add-task" onClick={() => setShowModal(true)}>+ Add Task</button>
+      </nav>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <div className="proj-body">
+        {project.description && <p className="proj-desc">{project.description}</p>}
+        {error && <div className="proj-error">{error}</div>}
 
-      <h2>Add Task</h2>
-      <form onSubmit={handleCreateTask}>
-        <input
-          type="text"
-          placeholder="Task name"
-          value={newTask.name}
-          onChange={(e) => setNewTask({ ...newTask, name: e.target.value })}
-          style={{ padding: '0.5rem', marginRight: '0.5rem' }}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Description"
-          value={newTask.description}
-          onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-          style={{ padding: '0.5rem', marginRight: '0.5rem' }}
-        />
-        <input
-          type="date"
-          value={newTask.dueDate}
-          onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
-          style={{ padding: '0.5rem', marginRight: '0.5rem' }}
-        />
-        <button type="submit">Add Task</button>
-      </form>
-
-      <h2>Tasks</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
-        {STATUS_OPTIONS.map((status) => (
-          <div key={status} style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '1rem' }}>
-            <h3>{status}</h3>
-            {tasksByStatus[status].length === 0 ? (
-              <p style={{ color: '#999' }}>No tasks</p>
-            ) : (
-              tasksByStatus[status].map((task) => (
-                <div key={task.id} style={{
-                  background: '#f9f9f9',
-                  borderRadius: '6px',
-                  padding: '0.75rem',
-                  marginBottom: '0.5rem'
-                }}>
-                  <strong>{task.name}</strong>
-                  <p style={{ fontSize: '0.85rem', color: '#666' }}>{task.description}</p>
-                  <select
-                    value={status}
-                    onChange={(e) => handleStatusChange(task, e.target.value)}
-                    style={{ marginRight: '0.5rem' }}
-                  >
-                    {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                  <button onClick={() => handleDeleteTask(task.id)} style={{ color: 'red' }}>Delete</button>
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <div className="kanban-board">
+            {STATUS_OPTIONS.map((status) => {
+              const columnTasks = getTasksByStatus(status)
+              return (
+                <div className={`kanban-col kanban-col-${status.toLowerCase()}`} key={status}>
+                  <div className="kanban-col-header">
+                    <div className="kanban-col-title">
+                      <span className="col-dot" />
+                      {STATUS_LABELS[status]}
+                    </div>
+                    <span className="col-count">{columnTasks.length}</span>
+                  </div>
+                  <Droppable droppableId={status}>
+                    {(provided, snapshot) => (
+                      <div
+                        className={`kanban-drop-zone ${snapshot.isDraggingOver ? 'dragging-over' : ''}`}
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                      >
+                        {columnTasks.length === 0 && !snapshot.isDraggingOver && (
+                          <div className="drop-placeholder">Drop tasks here</div>
+                        )}
+                        {columnTasks.map((task, index) => {
+                          const due = formatDueDate(task.dueDate)
+                          return (
+                            <Draggable key={task.id} draggableId={String(task.id)} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  className={`task-card ${snapshot.isDragging ? 'dragging' : ''}`}
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                >
+                                  <div className="task-card-header">
+                                    <div {...provided.dragHandleProps} className="task-grip">⠿</div>
+                                    <span className="task-name">{task.name}</span>
+                                    <button className="btn-task-delete" onClick={() => handleDeleteTask(task.id)}>✕</button>
+                                  </div>
+                                  {task.description && <p className="task-desc">{task.description}</p>}
+                                  {due && (
+                                    <span className={`task-due ${due.overdue ? 'overdue' : ''}`}>
+                                      {due.overdue ? '⚠ ' : ''}Due {due.text}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </Draggable>
+                          )
+                        })}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
                 </div>
-              ))
-            )}
+              )
+            })}
           </div>
-        ))}
+        </DragDropContext>
       </div>
+
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">New Task</h2>
+              <button className="btn-close" onClick={() => setShowModal(false)}>✕</button>
+            </div>
+            <form className="modal-form" onSubmit={handleCreateTask}>
+              <div className="field-group">
+                <label className="field-label">Task Name</label>
+                <input className="field-input" type="text" placeholder="e.g. Design the homepage" value={newTask.name} onChange={(e) => setNewTask({ ...newTask, name: e.target.value })} required autoFocus />
+              </div>
+              <div className="field-group">
+                <label className="field-label">Description</label>
+                <input className="field-input" type="text" placeholder="Optional details..." value={newTask.description} onChange={(e) => setNewTask({ ...newTask, description: e.target.value })} />
+              </div>
+              <div className="field-group">
+                <label className="field-label">Due Date</label>
+                <input className="field-input" type="date" value={newTask.dueDate} onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })} />
+              </div>
+              <div className="field-group">
+                <label className="field-label">Status</label>
+                <select className="field-select" value={newTask.status} onChange={(e) => setNewTask({ ...newTask, status: e.target.value })}>
+                  <option value="ToDo">To Do</option>
+                  <option value="InProgress">In Progress</option>
+                  <option value="Done">Done</option>
+                </select>
+              </div>
+              <div className="modal-actions">
+                <button className="btn-cancel" type="button" onClick={() => setShowModal(false)}>Cancel</button>
+                <button className="btn-create" type="submit" disabled={creating}>{creating ? 'Adding...' : 'Add Task'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
